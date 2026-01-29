@@ -4,19 +4,20 @@ import Link from 'next/link'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
 
-  if (!session) {
+  // ✅ Auth-critical: no confíes en session cookies
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) {
     redirect('/login')
   }
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('*')
-    .eq('id', session.user.id)
+    .select('full_name') // ✅ evita select('*') si no lo necesitas
+    .eq('id', user.id)
     .single()
 
-  const displayName = agent?.full_name || session.user.email?.split('@')[0] || 'Agente'
+  const displayName = agent?.full_name || user.email?.split('@')[0] || 'Agente'
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -76,3 +77,4 @@ export default async function DashboardPage() {
     </div>
   )
 }
+
